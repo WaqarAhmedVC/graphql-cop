@@ -1,22 +1,46 @@
 name: 'graphql-cop'
 description: 'run graphql-cop as a gitaction'
 inputs:
-  graphql-app:  # a URL with 'graphql' at the end
-    description: 'a URL with graphql at the end'
+  graphql-app:  
+    description: 'A URL with graphql at the end'
     required: true
-    default: 'https://.com'
+    default: ''
+    type: string
 
 runs:
   using: "composite"
   steps:
     - uses: actions/checkout@v4
+      with:
+        repository: 'vechain/graphql-cop-gitaction'
+        ref: 'main'
+        path: 'graphql-cop-gitaction'
+    - name: get lit of files
+      shell: bash
+      run: ls graphql-cop-gitaction
     - uses: actions/setup-python@v5
       with:
-      python-version: '3.10' 
-    - run: python3 graphql-cop.py -t $GRAPHQL_APP
+        python-version: '3.9'
+        #cache: 'pip' # caching pip dependencies
+        #cache-dependency-path: requirements.txt
+    - name: Install dependencies
+      shell: bash
+      run: pip install -r graphql-cop-gitaction/requirements.txt
+    - name: Run graphql-cop 
+      shell: bash
+      run: python graphql-cop-gitaction/graphql-cop.py -t $GRAPHQL_APP
       env:
-        $GRAPHQL_APP: ${{ inputs.graphql-app }}
-    - run: python3 graphql-cop.py -t $GRAPHQL_APP -o json > scan.json
+        GRAPHQL_APP: ${{ inputs.graphql-app }}
+    - name: Run graphql-cop JSON File
+      shell: bash
+      run: python graphql-cop-gitaction/graphql-cop.py -t $GRAPHQL_APP -o json > scan.json
       env:
-        $GRAPHQL_APP: ${{ inputs.graphql-app }}
+        GRAPHQL_APP: ${{ inputs.graphql-app }}
+    - uses: actions/upload-artifact@v4
+      with:
+        name: scan-results
+        path: scan.json
     
+
+
+  
